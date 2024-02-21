@@ -1,4 +1,7 @@
-Configuring the Environment
+PROCEDURE TO CREATE THE RISC-V VECTOR TOOLCHAIN FROM SCRATCH
+
+
+--- Configuring the Environment
 Before beginning this process, you need to configure the build environment. First, turn on Bash hash functions:
 
 $ set +h
@@ -52,7 +55,6 @@ $ mkdir -pv ${LJOS}/usr/{,local/}share/man/man{1,2,3,4,5,6,7,8}
 $ for dir in ${LJOS}/usr{,/local}; do      ln -sv share/{man,doc,info} ${dir};    done
 
 This directory tree is based on the Filesystem Hierarchy Standard (FHS), Create the directory for a cross-compilation toolchain:
-
 
 $ install -dv ${LJOS}/cross-tools{,/bin}
 
@@ -228,9 +230,9 @@ $ touch ${LJOS}/var/run/utmp ${LJOS}/var/log/{btmp,lastlog,wtmp}
 
 $ chmod -v 664 ${LJOS}/var/run/utmp ${LJOS}/var/log/lastlog
 
-----Building the Cross Compiler
+--- Building the Cross Compiler
 
-the cross compiler is a toolchain of various compilation tools built for the system on which it's executing but designed to compile for an architecture or microprocessor that's not necessarily compatible with the system on which you're using it. In my environment, I'm running a 64-bit x86 architecture (x86-64) and will be cross compiling to a RISC-V Vector extension target architecture. 
+The cross compiler is a toolchain of various compilation tools built for the system on which it's executing but designed to compile for an architecture or microprocessor that's not necessarily compatible with the system on which you're using it. In my environment, I'm running a 64-bit x86 architecture (x86-64) and will be cross compiling to a RISC-V Vector extension target architecture. 
 
 
 You never can be too sure with what is set in a currently running environment, which is why you'll unset the following C and C++ flags:
@@ -247,14 +249,14 @@ $  export LJOS_ARCH=riscv
 $ export LJOS_ENDIAN=little
 $  export LJOS_HOST=$(echo ${MACHTYPE} | sed "s/-[^-]*/-cross/")
 
-Kernel Headers
+--- Kernel Headers
 The kernel's standard header files need to be installed for the cross compiler. Uncompress the kernel tarball and change into its directory. Then run:
 
 $ make ARCH=${LJOS_ARCH} INSTALL_HDR_PATH=dest headers_install
 
 $ cp -rv dest/include/* ${LJOS}/usr/include
 
-Binutils
+--- Binutils
 Binutils contains a linker, assembler and other tools needed to handle compiled object files. Uncompress the tarball. Then create the binutils-build directory and change into it:
 
 $ mkdir binutils-build
@@ -276,7 +278,7 @@ Copy over the following header file to the target's filesystem:
 
 $ cp -v ../binutils-2.30/include/libiberty.h ${LJOS}/usr/include
 
-GCC (Static)
+--- GCC (Static)
 
 Before building the final cross-compiler toolchain, you first must build a statically compiled toolchain to build the C library (glibc) to which the final GCC cross compiler will link.
 
@@ -349,7 +351,7 @@ $ ln -vs libgcc.a `${LJOS_TARGET}-gcc -print-libgcc-file-name | sed 's/libgcc/&_
 
 $ cd ..
 
-Glibc
+--- Glibc
 
 Uncompress the glibc tarball. Then create the glibc-build directory and change into it:
 
@@ -379,7 +381,7 @@ $  echo $LJOS
 
 $ make && make install_root=${LJOS}/ install
 
-GCC (Final)
+--- GCC (Final)
 
 As I mentioned previously, you'll now build the final GCC cross compiler that will link to the C library built and installed in the previous step. Create the gcc-build directory and change into it:
 
@@ -425,11 +427,11 @@ $ export RANLIB="${LJOS_TARGET}-ranlib"
 $ export READELF="${LJOS_TARGET}-readelf"
 $ export STRIP="${LJOS_TARGET}-strip"
 
-Building the Target Image
+--- Building the Target Image
 
 The hard part is now complete—you have the cross compiler. Now, let's focus on building the components that will be installed on the target image. This includes various libraries and utilities and, of course, the Linux kernel itself.
 
-BusyBox
+--- BusyBox
 
 BusyBox is one of my all-time favorite open-source projects. BusyBox combines a large collection of tiny versions of the most commonly used Linux utilities into a single distributed package. Those tools range from common binaries, text editors and command-line shells to filesystem and networking utilities, process management tools and many more.
 
@@ -453,7 +455,7 @@ Install the following Perl script, as you'll need it for the kernel build below:
 $ cp -v examples/depmod.pl ${LJOS}/cross-tools/bin
 $ chmod 755 ${LJOS}/cross-tools/bin/depmod.pl
 
-The Linux Kernel
+--- The Linux Kernel
 
 Change into the kernel package directory and run the following to set the default x86-64 configuration template:
 
@@ -485,7 +487,7 @@ $ ${LJOS}/cross-tools/bin/depmod.pl \
 -F ${LJOS}/boot/System.map-4.16.3 \
 -b ${LJOS}/lib/modules/4.16.3
 
-The Bootscripts
+--- The Bootscripts
 
 
 The Cross Linux From Scratch (CLFS) project (a fork of the original LFS project) provides a wonderful set of bootscripts that I use here for simplicity's sake. Uncompress the package and change into its directory. Out of box, one of the package's makefiles contains a line that may not be compatible with your current working shell. Apply the following changes to the package's root Makefile to ensure that you don't experience any issues with package installation:
@@ -511,7 +513,7 @@ Then run the following commands to install and configure the target environment 
 $ make DESTDIR=${LJOS}/ install-bootscripts
 $ ln -sv ../rc.d/startup ${LJOS}/etc/init.d/rcS
 
-Zlib
+--- Zlib
 
 Now you're at the very last package for this tutorial. Zlib isn't a requirement, but it serves as a great guide for other packages you may want to install for your environment. Feel free to skip this step if you'd rather format and configure the physical or virtual HDD.
 
@@ -533,7 +535,8 @@ $ ln -svf ../../lib/libz.so.1 ${LJOS}/usr/lib/libz.so
 $ ln -svf ../../lib/libz.so.1 ${LJOS}/usr/lib/libz.so.1
 $ ln -svf ../lib/libz.so.1 ${LJOS}/lib64/libz.so.1
 
-Installing the Target Image
+--- Installing the Target Image
+
 All of the cross compilation is complete. Now you have everything you need to install the entire cross-compiled operating system to either a physical or virtual drive, but before doing that, let's not tamper with the original target build directory by making a copy of it:
 
 $ cp -rf ${LJOS}/ ${LJOS}-copy
