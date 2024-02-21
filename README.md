@@ -3,6 +3,7 @@
 To build a Cross Compilation toolchain from scratch for RISC-V Vector extension.
 
 HOST Architecture: x86
+
 TARGET Architecture: RISC-V
 
 The steps involved in building are as follows:
